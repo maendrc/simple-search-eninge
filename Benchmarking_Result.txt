@@ -1,0 +1,101 @@
+Benchmarking:
+tl;dr: largest I got it to work was at 70 connections
+with a mean Requests per second of 2.65 [#/sec]
+Average response time: 826 ms; 99 precentile: 26440 ms
+I think at the time, CPU utilization was roughly 10 precentile
+Network in was around 7M to 10M bytes, and out was around 3.08M bytes
+
+
+Failure 1: ab -n 10000 -c 100 http://52.0.147.7:8080/path
+This was at 100 connections fulfilling 10000 requests
+
+This is ApacheBench, Version 2.3 <$Revision: 1903618 $>
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Licensed to The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking 52.0.147.7 (be patient)
+Completed 1000 requests
+...
+Completed 9000 requests
+apr_pollset_poll: The timeout specified has expired (70007)
+Total of 9916 requests completed
+
+----------------------------------------------------------------------------
+
+Failure 2: ab -n 5000 -c 64 http://52.0.147.7:8080/path
+This was at 64 connections fulfilling 5000 requests
+
+Benchmarking 52.0.147.7 (be patient)
+Completed 500 requests
+...
+Completed 4500 requests
+apr_pollset_poll: The timeout specified has expired (70007)
+Total of 4949 requests completed
+
+----------------------------------------------------------------------------
+
+Attempt Recoding 3: It seems that request really are pushing it when there are more than 64 connections
+ab -n 64 -c 64 http://52.0.147.7:8080/path
+
+Concurrency Level:      64
+Time taken for tests:   13.168 seconds
+Complete requests:      64
+Failed requests:        0
+Non-2xx responses:      64
+Total transferred:      57472 bytes
+HTML transferred:       47040 bytes
+Requests per second:    4.86 [#/sec] (mean)
+Time per request:       13168.120 [ms] (mean)
+Time per request:       205.752 [ms] (mean, across all concurrent requests)
+Transfer rate:          4.26 [Kbytes/sec] received
+
+----------------------------------------------------------------------------
+
+Attempt Recording 4: 
+ab -n 90 -c 90 http://52.0.147.7:8080/path
+
+That one failed
+
+----------------------------------------------------------------------------
+
+It seems that after 64 there is no consistency on what succeed and what fails
+Largest I got it to work was 70
+
+ab -n 70 -c 70 http://52.0.147.7:8080/path
+
+Server Software:        WSGIServer/0.2
+Server Hostname:        52.0.147.7
+Server Port:            8080
+
+Document Path:          /path
+Document Length:        735 bytes
+
+Concurrency Level:      70
+Time taken for tests:   26.444 seconds
+Complete requests:      70
+Failed requests:        0
+Non-2xx responses:      70
+Total transferred:      62860 bytes
+HTML transferred:       51450 bytes
+Requests per second:    2.65 [#/sec] (mean)
+Time per request:       26443.567 [ms] (mean)
+Time per request:       377.765 [ms] (mean, across all concurrent requests)
+Transfer rate:          2.32 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        1    3   0.6      3       4
+Processing:     3 2740 4758.8    824   26437
+Waiting:        2 2740 4758.8    823   26437
+Total:          5 2743 4758.7    826   26440
+
+Percentage of the requests served within a certain time (ms)
+  50%    826
+  66%   1673
+  75%   3337
+  80%   3341
+  90%  13128
+  95%  13131
+  98%  13132
+  99%  26440
+ 100%  26440 (longest request)
